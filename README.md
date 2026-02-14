@@ -1,7 +1,12 @@
-# Tauri + React + Typescript
+# Breeze
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A desktop app for customizable widget dashboards. Create multiple views, add link and notes widgets, and arrange them in a drag-and-drop grid. Layout is persisted with SQLite.
 
-## Recommended IDE Setup
+Built with Tauri 2, React, Tailwind, and daisyUI.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Run
+
+```bash
+bun install
+bun tauri dev
+```
