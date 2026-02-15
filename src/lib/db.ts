@@ -50,6 +50,17 @@ export async function updateDashboard(id: string, updates: { name?: string; sort
   }
 }
 
+export async function reorderDashboards(orderedIds: string[]): Promise<void> {
+  const db = getDb();
+  const now = new Date().toISOString();
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db.execute(
+      "UPDATE dashboards SET sort_order = $1, updated_at = $2 WHERE id = $3",
+      [i, now, orderedIds[i]],
+    );
+  }
+}
+
 export async function deleteDashboard(id: string): Promise<void> {
   const db = getDb();
   await db.execute("DELETE FROM widgets WHERE dashboard_id = $1", [id]);

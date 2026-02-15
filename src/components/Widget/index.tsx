@@ -1,22 +1,19 @@
 import type React from "react";
 import type { WidgetMetadata } from "@/atoms";
+import { getDefaultMetadata } from "@/lib/widgetTypes";
 import Widget from "./Widget";
 import LinkWidget from "./LinkWidget";
 import NotesWidget from "./NotesWidget";
 
 export { Widget, LinkWidget, NotesWidget };
 
-const defaultMetadata: Record<string, WidgetMetadata> = {
-  link: { type: "link", title: "Link", data: { url: "" } },
-  notes: { type: "notes", title: "Notes", data: { content: "" } },
-};
-
 export function renderWidget(
   id: string,
   metadata: WidgetMetadata,
   onClose: () => void,
 ): React.ReactElement {
-  const title = metadata.title ?? defaultMetadata[metadata.type]?.title ?? "Widget";
+  const defaultMeta = getDefaultMetadata(metadata.type);
+  const title = metadata.title ?? defaultMeta.title ?? "Widget";
 
   const body =
     metadata.type === "link" ? (

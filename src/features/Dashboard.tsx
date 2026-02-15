@@ -4,8 +4,8 @@ import GridLayout, { noCompactor } from "react-grid-layout";
 import { gridBounds, minMaxSize } from "react-grid-layout/core";
 import type { Layout } from "react-grid-layout";
 import { activeDashboardIdAtom, layoutAtom, widgetMetadataAtom } from "@/atoms";
-import type { WidgetMetadata } from "@/atoms";
 import { getWidgets, upsertWidgets } from "@/lib/db";
+import { getDefaultMetadata } from "@/lib/widgetTypes";
 import { GRID_COLS, GRID_GAP, GRID_PADDING, GRID_ROWS } from "@/lib/gridConfig";
 import { renderWidget } from "@/components/Widget";
 
@@ -22,12 +22,6 @@ function debounce<A extends unknown[], R>(
     timeout = setTimeout(() => fn(...args), ms);
   };
 }
-
-const DEFAULT_LINK_METADATA: WidgetMetadata = {
-  type: "link",
-  title: "Link",
-  data: { url: "" },
-};
 
 function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,7 +133,7 @@ function Dashboard() {
           onLayoutChange={handleLayoutChange}
         >
           {layout.map((item) => {
-            const metadata = widgetMetadata[item.i] ?? DEFAULT_LINK_METADATA;
+            const metadata = widgetMetadata[item.i] ?? getDefaultMetadata("link");
             return (
               <div key={item.i} className="h-full w-full">
                 {renderWidget(item.i, metadata, () => handleCloseWidget(item.i))}

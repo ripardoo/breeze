@@ -1,11 +1,19 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let migrations = vec![tauri_plugin_sql::Migration {
-        version: 1,
-        description: "create_dashboards_and_widgets",
-        sql: include_str!("../migrations/001_initial.sql"),
-        kind: tauri_plugin_sql::MigrationKind::Up,
-    }];
+    let migrations = vec![
+        tauri_plugin_sql::Migration {
+            version: 1,
+            description: "create_dashboards_and_widgets",
+            sql: include_str!("../migrations/001_initial.sql"),
+            kind: tauri_plugin_sql::MigrationKind::Up,
+        },
+        tauri_plugin_sql::Migration {
+            version: 2,
+            description: "add_widget_metadata",
+            sql: include_str!("../migrations/1_1_add_widget_metadata.sql"),
+            kind: tauri_plugin_sql::MigrationKind::Up,
+        },
+    ];
 
     tauri::Builder::default()
         .plugin(
