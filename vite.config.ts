@@ -18,6 +18,14 @@ export default defineConfig(async () => ({
     },
   },
 
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    css: false,
+    include: ["src/**/*.test.{ts,tsx}"],
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
