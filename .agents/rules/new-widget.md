@@ -83,6 +83,22 @@ register({
 });
 ```
 
+### Optional: separate edit-mode UI (`editComponent`)
+
+If your widget needs a different UI when the dashboard is in edit mode (e.g. a URL input instead of a clickable link), add an `editComponent` to the registration:
+
+```tsx
+register({
+  // ...all other fields unchanged...
+  component: FooWidget,        // rendered in view mode (editViewAtom === false)
+  editComponent: FooWidgetEditor, // rendered in edit mode (editViewAtom === true)
+});
+```
+
+- Both `component` and `editComponent` receive the same `WidgetComponentProps<TData>`.
+- The edit component typically uses `useSetAtom(widgetMetadataAtom)` to write changes back (same pattern as writing widgets).
+- If `editComponent` is omitted, `component` renders in all modes (the notes pattern — always editable).
+
 ---
 
 ## Data model
@@ -121,7 +137,7 @@ Each widget row in the `widgets` table has:
 
 - Do **not** edit `src/atoms/index.ts` — `WidgetMetadata.type` is already `string`, no union to extend
 - Do **not** edit `src/lib/widgetRegistry.ts` — registry infrastructure, never changes per widget
-- Do **not** edit `src/components/Widget/index.tsx` — `renderWidget` uses the registry automatically
+- Do **not** edit `src/components/Widget/index.tsx` — `WidgetRenderer` uses the registry automatically
 - Do **not** edit `src/components/AddWidgetsModal.tsx` — the picker is driven by `getAllEntries()`
 - Do **not** add a DB migration — the `type`, `title`, `data` columns already exist
 - Do **not** import your widget anywhere except `widgetTypes.tsx` — the side-effect import in `main.tsx` ensures registration runs before first render

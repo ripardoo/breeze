@@ -19,6 +19,8 @@ export interface WidgetRegistryEntry {
   // typed components (e.g. FC<WidgetComponentProps<LinkData>>)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: React.ComponentType<WidgetComponentProps<any>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  editComponent?: React.ComponentType<WidgetComponentProps<any>>;
 }
 
 const registry = new Map<string, WidgetRegistryEntry>();

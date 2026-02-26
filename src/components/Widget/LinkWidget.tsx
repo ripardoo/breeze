@@ -1,3 +1,5 @@
+import { useSetAtom } from "jotai";
+import { widgetMetadataAtom } from "@/atoms";
 import type { WidgetComponentProps } from "@/lib/widgetRegistry";
 
 interface LinkData {
@@ -22,12 +24,35 @@ function LinkWidget({ data }: WidgetComponentProps<LinkData>) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      className={`link link-primary block h-full w-full p-2 flex items-center text-sm ${
+      className={`link link-primary h-full w-full p-2 flex items-center text-sm ${
         isPlaceholder ? "link-hover text-base-content/50 cursor-default" : ""
       }`}
     >
       <span className="truncate w-full">{displayLabel}</span>
     </a>
+  );
+}
+
+export function LinkWidgetEditor({ id, data }: WidgetComponentProps<LinkData>) {
+  const setWidgetMetadata = useSetAtom(widgetMetadataAtom);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWidgetMetadata((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], data: { url: e.target.value } },
+    }));
+  };
+
+  return (
+    <div className="flex items-center h-full w-full p-2">
+      <input
+        type="url"
+        className="input input-sm input-ghost w-full"
+        placeholder="https://..."
+        value={data.url}
+        onChange={handleChange}
+      />
+    </div>
   );
 }
 

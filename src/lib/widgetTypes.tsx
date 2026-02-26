@@ -1,6 +1,6 @@
 import { Link, StickyNote } from "lucide-react";
 import { register } from "@/lib/widgetRegistry";
-import LinkWidget from "@/components/Widget/LinkWidget";
+import LinkWidget, { LinkWidgetEditor } from "@/components/Widget/LinkWidget";
 import NotesWidget from "@/components/Widget/NotesWidget";
 
 register({
@@ -14,6 +14,7 @@ register({
     return { url: typeof r.url === "string" ? r.url : "" };
   },
   component: LinkWidget,
+  editComponent: LinkWidgetEditor,
 });
 
 register({

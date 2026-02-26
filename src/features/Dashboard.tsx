@@ -6,7 +6,7 @@ import type { Layout } from "react-grid-layout";
 import { activeDashboardIdAtom, layoutAtom, widgetMetadataAtom, toastMessageAtom } from "@/atoms";
 import { getWidgets, upsertWidgets } from "@/lib/db";
 import { GRID_COLS, GRID_GAP, GRID_PADDING, GRID_ROWS } from "@/lib/gridConfig";
-import { renderWidget } from "@/components/Widget";
+import { WidgetRenderer } from "@/components/Widget";
 import { debounce } from "@/utils/debounce";
 
 const LAYOUT_PERSIST_DEBOUNCE_MS = 300;
@@ -143,7 +143,7 @@ function Dashboard() {
             if (!metadata) return <div key={item.i} className="h-full w-full" />;
             return (
               <div key={item.i} className="h-full w-full">
-                {renderWidget(item.i, metadata, () => handleCloseWidget(item.i))}
+                <WidgetRenderer id={item.i} metadata={metadata} onClose={() => handleCloseWidget(item.i)} />
               </div>
             );
           })}
