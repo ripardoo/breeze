@@ -76,7 +76,8 @@ flowchart TD
     - `db.ts`: SQLite access wrappers used by frontend.
     - `gridConfig.ts`: grid constants.
     - `findWidgetSlot.ts`: slot-finding logic for new widgets.
-    - `widgetTypes.ts`: widget registry/default metadata.
+    - `widgetRegistry.ts`: registry infrastructure (`register`, `getEntry`, `getAllEntries`).
+    - `widgetTypes.tsx`: registers built-in widget types as a side-effect import.
 
 - `src/assets/`
   - Frontend static assets.
@@ -160,7 +161,8 @@ Use these rules when deciding where to place new files/functions.
 
 - Widget implementations and widget registry:
   - `src/components/Widget/*`
-  - `src/lib/widgetTypes.ts`
+  - `src/lib/widgetTypes.tsx` (registration)
+  - `src/lib/widgetRegistry.ts` (infrastructure)
 
 - Styling/theme behavior:
   - `src/app/App.css`
@@ -170,12 +172,13 @@ Use these rules when deciding where to place new files/functions.
 
 ### Add a new widget type
 
-1. Add widget type and defaults in `src/lib/widgetTypes.ts`.
-2. Extend widget metadata/type contracts in `src/atoms/index.ts` if needed.
-3. Create component in `src/components/Widget/` (for example `ClockWidget.tsx`).
-4. Update widget renderer in `src/components/Widget/index.tsx`.
-5. Add picker option/icon in `src/components/AddWidgetsModal.tsx`.
-6. If persisted metadata changes are needed, add a new migration in `src-tauri/migrations/` and register it in `src-tauri/src/lib.rs`.
+See `.agents/rules/new-widget.md` for the full guide.
+
+Short version:
+1. Create component in `src/components/Widget/` implementing `WidgetComponentProps<TData>`.
+2. Add a `register()` call in `src/lib/widgetTypes.tsx`.
+
+No other files need to change. The registry drives the picker, renderer, and DB serialization automatically.
 
 ### Add a new feature-level interaction
 
@@ -196,10 +199,10 @@ Use these rules when deciding where to place new files/functions.
 
 - Current schema has:
   - `dashboards` table (`id`, `name`, `sort_order`, timestamps).
-  - `widgets` table for layout coordinates and ownership.
-- There is a migration adding `widgets.type`, `widgets.title`, and `widgets.data`.
-- Current `src/lib/db.ts` layout methods (`getWidgets`, `upsertWidgets`) persist position/size, but do not yet persist full widget metadata fields.
-- Widget metadata is currently managed in client state (`widgetMetadataAtom`) at runtime.
+  - `widgets` table: `id`, `dashboard_id`, `x`, `y`, `w`, `h`, `type`, `title`, `data` (JSON blob), `created_at`.
+- `getWidgets` returns both layout positions and deserialized metadata; `upsertWidgets` persists both together.
+- Widget metadata (`type`, `title`, `data`) is fully persisted — loaded from DB on dashboard switch and saved on any layout or content change (debounced 300 ms).
+- `widgetMetadataAtom` is the runtime source of truth; it is always in sync with the DB within the debounce window.
 
 When extending metadata persistence, keep `db.ts`, migrations, and widget components aligned.
 
