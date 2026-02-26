@@ -1,27 +1,19 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { widgetMetadataAtom } from "@/atoms";
-import type { WidgetMetadata } from "@/atoms";
+import type { WidgetComponentProps } from "@/lib/widgetRegistry";
 
-interface NotesWidgetProps {
-  id: string;
-  metadata: WidgetMetadata;
+interface NotesData {
+  content: string;
 }
 
-function NotesWidget({ id, metadata }: NotesWidgetProps) {
-  const widgetMetadata = useAtomValue(widgetMetadataAtom);
+function NotesWidget({ id, data }: WidgetComponentProps<NotesData>) {
   const setWidgetMetadata = useSetAtom(widgetMetadataAtom);
-
-  const meta = widgetMetadata[id] ?? metadata;
-  const content = (meta.data?.content as string) ?? "";
+  const content = data.content;
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
     setWidgetMetadata((prev) => ({
       ...prev,
-      [id]: {
-        ...(prev[id] ?? metadata),
-        data: { ...(prev[id]?.data ?? metadata.data ?? {}), content: value },
-      },
+      [id]: { ...prev[id], data: { content: e.target.value } },
     }));
   };
 

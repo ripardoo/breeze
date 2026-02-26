@@ -28,12 +28,10 @@ export const toastMessageAtom = atom<string | null>(null);
 
 export const editViewAtom = atom<boolean>(false);
 
-export type WidgetType = "link" | "notes";
-
 export interface WidgetMetadata {
-  type: WidgetType;
+  type: string;
   title?: string;
-  data?: Record<string, unknown>;
+  data: Record<string, unknown>;
 }
 
 export const widgetMetadataAtom = atom<Record<string, WidgetMetadata>>({});

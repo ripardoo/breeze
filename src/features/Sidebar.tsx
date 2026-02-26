@@ -4,7 +4,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import BreezeLogo from "@/components/BreezeLogo";
-import { dashboardsAtom, activeDashboardIdAtom } from "@/atoms";
+import { dashboardsAtom, activeDashboardIdAtom, toastMessageAtom } from "@/atoms";
 import type { Dashboard } from "@/atoms";
 import { createDashboard, reorderDashboards } from "@/lib/db";
 
@@ -72,6 +72,7 @@ function Sidebar() {
   const dashboards = useAtomValue(dashboardsAtom);
   const [activeDashboardId, setActiveDashboardId] = useAtom(activeDashboardIdAtom);
   const setDashboards = useSetAtom(dashboardsAtom);
+  const setToastMessage = useSetAtom(toastMessageAtom);
   const previousDashboards = useRef<Dashboard[]>(dashboards);
 
   const handleSelectDashboard = (id: string) => {
@@ -83,8 +84,8 @@ function Sidebar() {
       const dashboard = await createDashboard(`Dashboard ${dashboards.length + 1}`);
       setDashboards((prev) => [...prev, dashboard]);
       setActiveDashboardId(dashboard.id);
-    } catch (err) {
-      console.error("Failed to create dashboard:", err);
+    } catch {
+      setToastMessage("Failed to create dashboard");
     }
   };
 
@@ -111,8 +112,8 @@ function Sidebar() {
               const reordered = move(dashboards, event);
               if (reordered !== dashboards) {
                 setDashboards(reordered.map((d, i) => ({ ...d, sort_order: i })));
-                reorderDashboards(reordered.map((d) => d.id)).catch((err) =>
-                  console.error("Failed to persist dashboard order:", err),
+                reorderDashboards(reordered.map((d) => d.id)).catch(() =>
+                  setToastMessage("Failed to persist dashboard order"),
                 );
               }
             }}

@@ -1,35 +1,24 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { useAtomValue, useAtom, useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import GridLayout, { noCompactor } from "react-grid-layout";
 import { gridBounds, minMaxSize } from "react-grid-layout/core";
 import type { Layout } from "react-grid-layout";
-import { activeDashboardIdAtom, layoutAtom, widgetMetadataAtom } from "@/atoms";
+import { activeDashboardIdAtom, layoutAtom, widgetMetadataAtom, toastMessageAtom } from "@/atoms";
 import { getWidgets, upsertWidgets } from "@/lib/db";
-import { getDefaultMetadata } from "@/lib/widgetTypes";
 import { GRID_COLS, GRID_GAP, GRID_PADDING, GRID_ROWS } from "@/lib/gridConfig";
 import { renderWidget } from "@/components/Widget";
+import { debounce } from "@/utils/debounce";
 
 const LAYOUT_PERSIST_DEBOUNCE_MS = 300;
 const freeCompactor = { ...noCompactor, preventCollision: true };
 
-function debounce<A extends unknown[], R>(
-  fn: (...args: A) => R,
-  ms: number,
-): (...args: A) => void {
-  let timeout: ReturnType<typeof setTimeout>;
-  return (...args: A) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), ms);
-  };
-}
-
 function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const activeDashboardId = useAtomValue(activeDashboardIdAtom);
+  const [activeDashboardId] = useAtom(activeDashboardIdAtom);
   const [layout, setLayout] = useAtom(layoutAtom);
-  const widgetMetadata = useAtomValue(widgetMetadataAtom);
-  const setWidgetMetadata = useSetAtom(widgetMetadataAtom);
+  const [widgetMetadata, setWidgetMetadata] = useAtom(widgetMetadataAtom);
+  const setToastMessage = useSetAtom(toastMessageAtom);
 
   const measure = useCallback(() => {
     if (containerRef.current) {
@@ -49,11 +38,17 @@ function Dashboard() {
 
   useEffect(() => {
     if (activeDashboardId) {
-      getWidgets(activeDashboardId).then((widgets) => setLayout(widgets));
+      getWidgets(activeDashboardId)
+        .then(({ layout: widgets, metadata }) => {
+          setLayout(widgets);
+          setWidgetMetadata(metadata);
+        })
+        .catch(() => setToastMessage("Failed to load widgets"));
     } else {
       setLayout([]);
+      setWidgetMetadata({});
     }
-  }, [activeDashboardId, setLayout]);
+  }, [activeDashboardId, setLayout, setWidgetMetadata, setToastMessage]);
 
   const rowHeight =
     dimensions.height > 0
@@ -62,22 +57,35 @@ function Dashboard() {
 
   const debouncedUpsert = useMemo(
     () =>
-      debounce((dashboardId: string, newLayout: Layout) => {
-        upsertWidgets(dashboardId, [...newLayout]).catch((err) =>
-          console.error("Failed to persist layout:", err),
-        );
-      }, LAYOUT_PERSIST_DEBOUNCE_MS),
+      debounce(
+        (
+          dashboardId: string,
+          newLayout: Layout,
+          newMetadata: Record<string, import("@/atoms").WidgetMetadata>,
+        ) => {
+          upsertWidgets(dashboardId, [...newLayout], newMetadata).catch(() =>
+            setToastMessage("Failed to persist layout"),
+          );
+        },
+        LAYOUT_PERSIST_DEBOUNCE_MS,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  useEffect(() => {
+    if (!activeDashboardId) return;
+    debouncedUpsert(activeDashboardId, layout, widgetMetadata);
+  }, [widgetMetadata, activeDashboardId, debouncedUpsert, layout]);
 
   const handleLayoutChange = useCallback(
     (newLayout: Layout) => {
       setLayout([...newLayout]);
       if (activeDashboardId) {
-        debouncedUpsert(activeDashboardId, newLayout);
+        debouncedUpsert(activeDashboardId, newLayout, widgetMetadata);
       }
     },
-    [activeDashboardId, setLayout, debouncedUpsert],
+    [activeDashboardId, setLayout, debouncedUpsert, widgetMetadata],
   );
 
   const gridConfig = useMemo(
@@ -96,19 +104,17 @@ function Dashboard() {
   const handleCloseWidget = useCallback(
     (id: string) => {
       const newLayout = layout.filter((item) => item.i !== id);
+      const newMetadata = { ...widgetMetadata };
+      delete newMetadata[id];
       setLayout(newLayout);
-      setWidgetMetadata((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+      setWidgetMetadata(newMetadata);
       if (activeDashboardId) {
-        upsertWidgets(activeDashboardId, newLayout).catch((err) =>
-          console.error("Failed to persist layout:", err),
+        upsertWidgets(activeDashboardId, newLayout, newMetadata).catch(() =>
+          setToastMessage("Failed to persist layout"),
         );
       }
     },
-    [layout, activeDashboardId, setLayout, setWidgetMetadata],
+    [layout, widgetMetadata, activeDashboardId, setLayout, setWidgetMetadata, setToastMessage],
   );
 
   return (
@@ -133,7 +139,8 @@ function Dashboard() {
           onLayoutChange={handleLayoutChange}
         >
           {layout.map((item) => {
-            const metadata = widgetMetadata[item.i] ?? getDefaultMetadata("link");
+            const metadata = widgetMetadata[item.i];
+            if (!metadata) return <div key={item.i} className="h-full w-full" />;
             return (
               <div key={item.i} className="h-full w-full">
                 {renderWidget(item.i, metadata, () => handleCloseWidget(item.i))}

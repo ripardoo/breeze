@@ -10,10 +10,9 @@ import {
   dashboardsAtom,
   widgetMetadataAtom,
 } from "@/atoms";
-import type { WidgetType } from "@/atoms";
 import { updateDashboard, upsertWidgets } from "@/lib/db";
 import { findFirstAvailableSlot } from "@/lib/findWidgetSlot";
-import { getDefaultMetadata } from "@/lib/widgetTypes";
+import { getEntry } from "@/lib/widgetRegistry";
 import { DEFAULT_WIDGET_W, DEFAULT_WIDGET_H } from "@/lib/gridConfig";
 import type { LayoutItem } from "react-grid-layout";
 import AddWidgetsModal from "@/components/AddWidgetsModal";
@@ -25,7 +24,7 @@ function Topbar() {
   const setToastMessage = useSetAtom(toastMessageAtom);
   const [editView, setEditView] = useAtom(editViewAtom);
   const setDashboards = useSetAtom(dashboardsAtom);
-  const setWidgetMetadata = useSetAtom(widgetMetadataAtom);
+  const [widgetMetadata, setWidgetMetadata] = useAtom(widgetMetadataAtom);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState("");
@@ -54,13 +53,16 @@ function Topbar() {
       setDashboards((prev) =>
         prev.map((d) => (d.id === activeDashboardId ? { ...d, name } : d)),
       );
-    } catch (err) {
-      console.error("Failed to update dashboard name:", err);
+    } catch {
+      setToastMessage("Failed to rename dashboard");
     }
   };
 
-  const handleAddWidgetOfType = (type: WidgetType) => {
+  const handleAddWidgetOfType = (type: string) => {
     if (!activeDashboardId) return;
+    const entry = getEntry(type);
+    if (!entry) return;
+
     const slot = findFirstAvailableSlot(layout, DEFAULT_WIDGET_W, DEFAULT_WIDGET_H);
     if (!slot) {
       setToastMessage("No space available. The dashboard is full.");
@@ -74,12 +76,13 @@ function Topbar() {
       w: DEFAULT_WIDGET_W,
       h: DEFAULT_WIDGET_H,
     };
-    const metadata = getDefaultMetadata(type);
-    setWidgetMetadata((prev) => ({ ...prev, [id]: metadata }));
+    const newMeta = { type, title: entry.defaultTitle, data: entry.defaultData };
+    const newMetadata = { ...widgetMetadata, [id]: newMeta };
+    setWidgetMetadata(newMetadata);
     const newLayout = [...layout, newItem];
     setLayout(newLayout);
-    upsertWidgets(activeDashboardId, newLayout).catch((err) =>
-      console.error("Failed to add widget:", err),
+    upsertWidgets(activeDashboardId, newLayout, newMetadata).catch(() =>
+      setToastMessage("Failed to add widget"),
     );
   };
 

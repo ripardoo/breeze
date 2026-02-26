@@ -1,20 +1,12 @@
-import { useAtomValue } from "jotai";
-import { widgetMetadataAtom } from "@/atoms";
-import type { WidgetMetadata } from "@/atoms";
+import type { WidgetComponentProps } from "@/lib/widgetRegistry";
 
-interface LinkWidgetProps {
-  id: string;
-  metadata: WidgetMetadata;
+interface LinkData {
+  url: string;
 }
 
-function LinkWidget({ id, metadata }: LinkWidgetProps) {
-  const widgetMetadata = useAtomValue(widgetMetadataAtom);
-
-  const meta = widgetMetadata[id] ?? metadata;
-  const url = (meta.data?.url as string) ?? "";
-  const title = meta.title ?? "Link";
-
-  const displayLabel = title || url || "Add a link";
+function LinkWidget({ data }: WidgetComponentProps<LinkData>) {
+  const url = data.url;
+  const displayLabel = url || "Add a link";
   const href = url || "#";
   const isPlaceholder = !url;
 
